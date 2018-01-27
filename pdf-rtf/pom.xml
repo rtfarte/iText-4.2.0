@@ -4,9 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.rtfarte</groupId>
+        <groupId>com.github.librepdf</groupId>
         <artifactId>openpdf-parent</artifactId>
-        <version>1.0</version>
+        <version>1.0.6-SNAPSHOT</version>
     </parent>
 
     <artifactId>pdf-rtf</artifactId>
@@ -14,11 +14,19 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.github.rtfarte</groupId>
-            <artifactId>pdf-xml</artifactId>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
+
+        <!-- Test Dependencies -->
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

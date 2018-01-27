@@ -810,8 +810,8 @@ public abstract class BaseFont {
 		String nameBase = getBaseName(name);
 		encoding = normalizeEncoding(encoding);
 		boolean isBuiltinFonts14 = BuiltinFonts14.containsKey(name);
-		boolean isCJKFont = isBuiltinFonts14 ? false : CJKFont.isCJKFont(
-				nameBase, encoding);
+		boolean isCJKFont = !isBuiltinFonts14 && CJKFont.isCJKFont(
+                nameBase, encoding);
 		if (isBuiltinFonts14 || isCJKFont) {
 			embedded = false;
 		} else if (encoding.equals(IDENTITY_H) || encoding.equals(IDENTITY_V)) {
@@ -852,8 +852,9 @@ public abstract class BaseFont {
 		}
 		if (cached) {
 			fontCache.putIfAbsent(key, fontBuilt);
+      return fontCache.get(key);
 		}
-		return fontCache.get(key);
+		return fontBuilt;
 	}
 
 	/**

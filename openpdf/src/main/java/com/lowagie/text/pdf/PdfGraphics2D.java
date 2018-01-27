@@ -186,10 +186,18 @@ public class PdfGraphics2D extends Graphics2D {
     }
     
     /**
+     * Shortcut constructor for PDFGraphics2D.
+     *
+     */
+    public PdfGraphics2D(PdfContentByte cb, float width, float height) {
+        this(cb, width, height, null, false, false, 0);
+    }
+    
+    /**
      * Constructor for PDFGraphics2D.
      *
      */
-    PdfGraphics2D(PdfContentByte cb, float width, float height, FontMapper fontMapper, boolean onlyShapes, boolean convertImagesToJPEG, float quality) {
+    public PdfGraphics2D(PdfContentByte cb, float width, float height, FontMapper fontMapper, boolean onlyShapes, boolean convertImagesToJPEG, float quality) {
         super();
         dg2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
@@ -688,17 +696,9 @@ public class PdfGraphics2D extends Graphics2D {
                 if (nStroke.getDashPhase() != oStroke.getDashPhase()) {
                     makeDash = true;
                 }
-                else if (!java.util.Arrays.equals(nStroke.getDashArray(), oStroke.getDashArray())) {
-                    makeDash = true;
-                }
-                else
-                    makeDash = false;
+                else makeDash = !java.util.Arrays.equals(nStroke.getDashArray(), oStroke.getDashArray());
             }
-            else if (oStroke.getDashArray() != null) {
-                makeDash = true;
-            }
-            else
-                makeDash = false;
+            else makeDash = oStroke.getDashArray() != null;
         }
         else {
             makeDash = true;
@@ -909,6 +909,7 @@ public class PdfGraphics2D extends Graphics2D {
         g2.paint = this.paint;
         g2.fillGState = this.fillGState;
         g2.currentFillGState = this.currentFillGState;
+        g2.currentStrokeGState = this.currentStrokeGState;
         g2.strokeGState = this.strokeGState;
         g2.background = this.background;
         g2.mediaTracker = this.mediaTracker;
@@ -1086,7 +1087,7 @@ public class PdfGraphics2D extends Graphics2D {
             followPath(s, CLIP);
         }
         paintFill = paintStroke = null;
-        currentFillGState = currentStrokeGState = 255;
+        currentFillGState = currentStrokeGState = -1;
         oldStroke = strokeOne;
     }
     
@@ -1460,7 +1461,7 @@ public class PdfGraphics2D extends Graphics2D {
                 ImageWriteParam iwparam = new JPEGImageWriteParam(Locale.getDefault());
                 iwparam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                 iwparam.setCompressionQuality(jpegQuality);//Set here your compression rate
-                ImageWriter iw = (ImageWriter)ImageIO.getImageWritersByFormatName("jpg").next();
+                ImageWriter iw = ImageIO.getImageWritersByFormatName("jpg").next();
                 ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
                 iw.setOutput(ios);
                 iw.write(null, new IIOImage(scaled, null, null), iwparam);
@@ -1487,7 +1488,7 @@ public class PdfGraphics2D extends Graphics2D {
         } catch (Exception ex) {
             throw new IllegalArgumentException();
         }
-        if (currentFillGState != 255) {
+        if (currentFillGState != 255 && currentFillGState != -1) {
             PdfGState gs = fillGState[currentFillGState];
             cb.setGState(gs);
         }        
@@ -1613,10 +1614,23 @@ public class PdfGraphics2D extends Graphics2D {
                 PdfPatternPainter pattern = cb.createPattern(width, height);
                 image.setAbsolutePosition(0,0);
                 pattern.addImage(image);
-                if (fill)
+
+                if (fill) {
+                	if (currentFillGState != 255){
+                		currentFillGState = 255;
+                		PdfGState gs = fillGState[255];
+						if (gs == null) {
+							gs = new PdfGState();
+							gs.setFillOpacity(1);
+							fillGState[255] = gs;
+						}
+						cb.setGState(gs);
+					}
                     cb.setPatternFill(pattern);
-                else
+                }
+                else {
                     cb.setPatternStroke(pattern);
+                }
             } catch (Exception ex) {
                 if (fill)
                     cb.setColorFill(Color.gray);

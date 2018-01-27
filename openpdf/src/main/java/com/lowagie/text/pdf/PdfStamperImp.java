@@ -163,17 +163,20 @@ class PdfStamperImp extends PdfWriter {
         PdfDictionary pages = (PdfDictionary)PdfReader.getPdfObject(catalog.get(PdfName.PAGES));
         pages.put(PdfName.ITXT, new PdfString(Document.getRelease()));
         markUsed(pages);
-        PdfDictionary acroForm = (PdfDictionary)PdfReader.getPdfObject(catalog.get(PdfName.ACROFORM), reader.getCatalog());
-        if (acroFields != null && acroFields.getXfa().isChanged()) {
-            markUsed(acroForm);
-            if (!flat)
-                acroFields.getXfa().setXfa(this);
-        }
-        if (sigFlags != 0) {
-            if (acroForm != null) {
-                acroForm.put(PdfName.SIGFLAGS, new PdfNumber(sigFlags));
+        PdfObject acroFormObject = PdfReader.getPdfObject(catalog.get(PdfName.ACROFORM), reader.getCatalog());
+        if (acroFormObject instanceof PdfDictionary) {
+            PdfDictionary acroForm = (PdfDictionary) acroFormObject;
+            if (acroFields != null && acroFields.getXfa().isChanged()) {
                 markUsed(acroForm);
-                markUsed(catalog);
+                if (!flat)
+                    acroFields.getXfa().setXfa(this);
+            }
+            if (sigFlags != 0) {
+                if (acroForm != null) {
+                    acroForm.put(PdfName.SIGFLAGS, new PdfNumber(sigFlags));
+                    markUsed(acroForm);
+                    markUsed(catalog);
+                }
             }
         }
         closed = true;
@@ -992,7 +995,7 @@ class PdfStamperImp extends PdfWriter {
 					continue;
 
 				PdfDictionary annDic = (PdfDictionary)annoto;
- 				if (!((PdfName)annDic.get(PdfName.SUBTYPE)).equals(PdfName.FREETEXT))
+ 				if (!annDic.get(PdfName.SUBTYPE).equals(PdfName.FREETEXT))
 					continue;
 				PdfNumber ff = annDic.getAsNumber(PdfName.F);
                 int flags = (ff != null) ? ff.intValue() : 0;
@@ -1526,7 +1529,7 @@ class PdfStamperImp extends PdfWriter {
         throw new UnsupportedOperationException(MessageLocalization.getComposedMessage("use.pdfstamper.setthumbnail"));
     }
 
-    void setThumbnail(Image image, int page) throws PdfException, DocumentException {
+    void setThumbnail(Image image, int page) throws DocumentException {
         PdfIndirectReference thumb = getImageReference(addDirectImageSimple(image));
         reader.resetReleasePage();
         PdfDictionary dic = reader.getPageN(page);
